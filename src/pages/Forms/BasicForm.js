@@ -229,10 +229,12 @@ class BasicForms extends PureComponent {
                 </FormItem>
               </div>
             </FormItem>
+
             <FormItem {...submitFormLayout} style={{ marginTop: 32 }}>
               <Button type="primary" htmlType="submit" loading={submitting}>
                 <FormattedMessage id="form.submit" />
               </Button>
+
               <Button style={{ marginLeft: 8 }}>
                 <FormattedMessage id="form.save" />
               </Button>

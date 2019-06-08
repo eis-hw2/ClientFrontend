@@ -1,5 +1,6 @@
 import { stringify } from 'qs';
 import request from '@/utils/request';
+import { getToken } from '@/utils/utils';
 
 export async function queryProjectNotice() {
   return request('/api/project/notice');
@@ -48,6 +49,29 @@ export async function fakeSubmitForm(params) {
     method: 'POST',
     data: params,
   });
+}
+
+export async function trueSubmitForm(params) {
+  return request('http://202.120.40.8:30255/api/v1/Order?brokerId=4', {
+    method: 'POST',
+    headers: {
+      token: localStorage.getItem('token'),
+    },
+    data: JSON.stringify(params),
+  });
+}
+
+export async function getBrokers() {
+  return request('http://202.120.40.8:30255/api/v1/Broker');
+}
+
+export async function getFutures(params) {
+  let path = 'http://202.120.40.8:30255/api/v1/Future?brokerId=' + params;
+  return request(path);
+}
+
+export async function passBroker(params) {
+  return params;
 }
 
 export async function fakeChartData() {
@@ -100,6 +124,17 @@ export async function updateFakeList(params) {
       ...restParams,
       method: 'update',
     },
+  });
+}
+
+export async function trueAccountLogin(params) {
+  let formData = new FormData();
+  Object.keys(params).forEach(key => {
+    formData.append(key, params[key]);
+  });
+  return request('http://202.120.40.8:30255/login', {
+    method: 'POST',
+    data: formData,
   });
 }
 

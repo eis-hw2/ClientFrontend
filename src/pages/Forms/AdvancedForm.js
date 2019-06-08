@@ -17,15 +17,30 @@ import FooterToolbar from '@/components/FooterToolbar';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 import TableForm from './TableForm';
 import styles from './style.less';
+import { message } from 'antd';
+import { formatMessage, FormattedMessage } from 'umi-plugin-react/locale';
+import { getToken } from '@/utils/utils';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
-
+const submitFormLayout = {
+  wrapperCol: {
+    xs: { span: 24, offset: 0 },
+    sm: { span: 10, offset: 7 },
+  },
+};
 const fieldLabels = {
   name: '仓库名',
   url: '仓库域名',
   owner: '仓库管理员',
-  approver: '审批人',
+  orderType: 'OrderType',
+  orderSide: 'OrderSide',
+  future: 'Future',
+  price: 'Price',
+  volume: 'Volume',
+  unitPrice: 'Price',
+  targetType: 'Target Order Type',
+  stopPrice: 'Stop Price',
   dateRange: '生效日期',
   type: '仓库类型',
   name2: '任务名',
@@ -57,13 +72,18 @@ const tableData = [
   },
 ];
 
-@connect(({ loading }) => ({
+@connect(({ chart, loading }) => ({
+  chart,
   submitting: loading.effects['form/submitAdvancedForm'],
 }))
 @Form.create()
 class AdvancedForm extends PureComponent {
   state = {
     width: '100%',
+    orderType: 'MarketOrder',
+    orderSide: 'BUYER',
+    future: '',
+    targetType: 'MarketOrder',
   };
 
   componentDidMount() {
@@ -137,185 +157,196 @@ class AdvancedForm extends PureComponent {
     } = this.props;
     validateFieldsAndScroll((error, values) => {
       if (!error) {
-        // submit the values
-        dispatch({
-          type: 'form/submitAdvancedForm',
-          payload: values,
-        });
+        const { chart } = this.props;
+        const { currentBroker } = chart;
+        console.log(currentBroker, values);
+        fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + currentBroker, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            token: localStorage.getItem('token'),
+          },
+          body: JSON.stringify(values),
+        })
+          .then(res => res.json())
+          .then(result => {
+            console.log(result.body);
+            if (result.id !== 'error' && result.body[currentBroker] !== null) {
+              message.success('Order Successfully Created');
+              this.handleReset();
+            } else {
+              message.error('Failed to Create Order');
+            }
+          });
       }
     });
   };
 
+  onChangeOrderType = value => {
+    console.log(`selected ${value}`);
+    this.setState({
+      orderType: value,
+    });
+  };
+
+  onChangeOrderSide = value => {
+    console.log(`selected ${value}`);
+    this.setState({
+      orderSide: value,
+    });
+  };
+
+  onChangeFuture = value => {
+    console.log(`selected ${value}`);
+    this.setState({
+      future: value,
+    });
+  };
+
+  onChangeTargetType = value => {
+    console.log(`selected ${value}`);
+    this.setState({
+      targetType: value,
+    });
+  };
+
+  handleReset = () => {
+    this.props.form.resetFields();
+  };
+
   render() {
+    const { chart, loading } = this.props;
+
     const {
       form: { getFieldDecorator },
       submitting,
     } = this.props;
-    const { width } = this.state;
+    const { width, orderType } = this.state;
 
+    const {
+      visitData,
+      visitData2,
+      salesData,
+      searchData,
+      offlineData,
+      offlineChartData,
+      salesTypeData,
+      salesTypeDataOnline,
+      salesTypeDataOffline,
+      brokersData,
+      futuresData,
+    } = chart;
     return (
-      <PageHeaderWrapper
-        title="高级表单"
-        content="高级表单常见于一次性输入和提交大批量数据的场景。"
-        wrapperClassName={styles.advancedForm}
-      >
-        <Card title="仓库管理" className={styles.card} bordered={false}>
-          <Form layout="vertical" hideRequiredMark>
+      <Card title="Creat Order" className={styles.card} bordered={false}>
+        <Form layout="vertical" hideRequiredMark>
+          <Row gutter={16}>
+            <Col lg={6} md={12} sm={24}>
+              <Form.Item label={fieldLabels.orderType}>
+                {getFieldDecorator('type', {
+                  rules: [{ required: true, message: 'Choose OrderType' }],
+                })(
+                  <Select onChange={this.onChangeOrderType} placeholder="Choose OrderType">
+                    <Option value="MarketOrder">MartketOrder</Option>
+                    <Option value="LimitOrder">LimitOrder</Option>
+                    <Option value="StopOrder">StopOrder</Option>
+                    <Option value="CancelOrder">CancelOrder</Option>
+                  </Select>
+                )}
+              </Form.Item>
+            </Col>
+
+            <Col lg={6} md={12} sm={24}>
+              <Form.Item label={fieldLabels.orderSide}>
+                {getFieldDecorator('side', {
+                  rules: [{ required: true, message: 'Choose OrderSide' }],
+                })(
+                  <Select onChange={this.onChangeOrderSide} placeholder="Choose OrderSide">
+                    <Option value="BUYER">Buy</Option>
+                    <Option value="SELLER">Sell</Option>
+                  </Select>
+                )}
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {orderType === 'StopOrder' ? (
             <Row gutter={16}>
               <Col lg={6} md={12} sm={24}>
-                <Form.Item label={fieldLabels.name}>
-                  {getFieldDecorator('name', {
-                    rules: [{ required: true, message: '请输入仓库名称' }],
-                  })(<Input placeholder="请输入仓库名称" />)}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 6, offset: 2 }} lg={{ span: 8 }} md={{ span: 12 }} sm={24}>
-                <Form.Item label={fieldLabels.url}>
-                  {getFieldDecorator('url', {
-                    rules: [{ required: true, message: '请选择' }],
+                <Form.Item label={fieldLabels.targetType}>
+                  {getFieldDecorator('targetType', {
+                    rules: [{ required: true, message: 'Choose Target OrderType' }],
                   })(
-                    <Input
-                      style={{ width: '100%' }}
-                      addonBefore="http://"
-                      addonAfter=".com"
-                      placeholder="请输入"
-                    />
-                  )}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 8, offset: 2 }} lg={{ span: 10 }} md={{ span: 24 }} sm={24}>
-                <Form.Item label={fieldLabels.owner}>
-                  {getFieldDecorator('owner', {
-                    rules: [{ required: true, message: '请选择管理员' }],
-                  })(
-                    <Select placeholder="请选择管理员">
-                      <Option value="xiao">付晓晓</Option>
-                      <Option value="mao">周毛毛</Option>
+                    <Select
+                      onChange={this.onChangeTargetType}
+                      placeholder="Choose Target OrderType"
+                    >
+                      <Option value="MarketOrder">MartketOrder</Option>
+                      <Option value="LimitOrder">LimitOrder</Option>
                     </Select>
                   )}
+                </Form.Item>
+              </Col>
+              <Col lg={6} md={12} sm={24}>
+                <Form.Item label={fieldLabels.stopPrice}>
+                  {getFieldDecorator('stopPrice', {
+                    rules: [{ required: true, message: 'Input Stop Price' }],
+                  })(<Input placeholder="Input Stop Price" />)}
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={16}>
+          ) : (
+            <br />
+          )}
+
+          <Row gutter={16}>
+            <Col lg={6} md={12} sm={24}>
+              <Form.Item label={fieldLabels.future}>
+                {getFieldDecorator('futureName', {
+                  rules: [{ required: true, message: 'Choose Future' }],
+                })(
+                  <Select onChange={this.onChangeFuture} placeholder="Choose Future">
+                    {futuresData.map(item => {
+                      return <Option value={item.description}>{item.description}</Option>;
+                    })}
+                  </Select>
+                )}
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col lg={6} md={12} sm={24}>
+              <Form.Item label={fieldLabels.volume}>
+                {getFieldDecorator('totalCount', {
+                  rules: [{ required: true, message: 'Input Volume' }],
+                })(<Input placeholder="Input Volume" />)}
+              </Form.Item>
+            </Col>
+            {orderType === 'MarketOrder' ||
+            (this.state.orderType === 'StopOrder' && this.state.targetType === 'MarketOrder') ? (
+              <br />
+            ) : (
               <Col lg={6} md={12} sm={24}>
-                <Form.Item label={fieldLabels.approver}>
-                  {getFieldDecorator('approver', {
-                    rules: [{ required: true, message: '请选择审批员' }],
-                  })(
-                    <Select placeholder="请选择审批员">
-                      <Option value="xiao">付晓晓</Option>
-                      <Option value="mao">周毛毛</Option>
-                    </Select>
-                  )}
+                <Form.Item label={fieldLabels.unitPrice}>
+                  {getFieldDecorator('unitPrice', {
+                    rules: [{ required: true, message: 'Input Price' }],
+                  })(<Input placeholder="Input Price" />)}
                 </Form.Item>
               </Col>
-              <Col xl={{ span: 6, offset: 2 }} lg={{ span: 8 }} md={{ span: 12 }} sm={24}>
-                <Form.Item label={fieldLabels.dateRange}>
-                  {getFieldDecorator('dateRange', {
-                    rules: [{ required: true, message: '请选择生效日期' }],
-                  })(
-                    <RangePicker placeholder={['开始日期', '结束日期']} style={{ width: '100%' }} />
-                  )}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 8, offset: 2 }} lg={{ span: 10 }} md={{ span: 24 }} sm={24}>
-                <Form.Item label={fieldLabels.type}>
-                  {getFieldDecorator('type', {
-                    rules: [{ required: true, message: '请选择仓库类型' }],
-                  })(
-                    <Select placeholder="请选择仓库类型">
-                      <Option value="private">私密</Option>
-                      <Option value="public">公开</Option>
-                    </Select>
-                  )}
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
-        </Card>
-        <Card title="任务管理" className={styles.card} bordered={false}>
-          <Form layout="vertical" hideRequiredMark>
-            <Row gutter={16}>
-              <Col lg={6} md={12} sm={24}>
-                <Form.Item label={fieldLabels.name2}>
-                  {getFieldDecorator('name2', {
-                    rules: [{ required: true, message: '请输入' }],
-                  })(<Input placeholder="请输入" />)}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 6, offset: 2 }} lg={{ span: 8 }} md={{ span: 12 }} sm={24}>
-                <Form.Item label={fieldLabels.url2}>
-                  {getFieldDecorator('url2', {
-                    rules: [{ required: true, message: '请选择' }],
-                  })(<Input placeholder="请输入" />)}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 8, offset: 2 }} lg={{ span: 10 }} md={{ span: 24 }} sm={24}>
-                <Form.Item label={fieldLabels.owner2}>
-                  {getFieldDecorator('owner2', {
-                    rules: [{ required: true, message: '请选择管理员' }],
-                  })(
-                    <Select placeholder="请选择管理员">
-                      <Option value="xiao">付晓晓</Option>
-                      <Option value="mao">周毛毛</Option>
-                    </Select>
-                  )}
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col lg={6} md={12} sm={24}>
-                <Form.Item label={fieldLabels.approver2}>
-                  {getFieldDecorator('approver2', {
-                    rules: [{ required: true, message: '请选择审批员' }],
-                  })(
-                    <Select placeholder="请选择审批员">
-                      <Option value="xiao">付晓晓</Option>
-                      <Option value="mao">周毛毛</Option>
-                    </Select>
-                  )}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 6, offset: 2 }} lg={{ span: 8 }} md={{ span: 12 }} sm={24}>
-                <Form.Item label={fieldLabels.dateRange2}>
-                  {getFieldDecorator('dateRange2', {
-                    rules: [{ required: true, message: '请输入' }],
-                  })(
-                    <TimePicker
-                      placeholder="提醒时间"
-                      style={{ width: '100%' }}
-                      getPopupContainer={trigger => trigger.parentNode}
-                    />
-                  )}
-                </Form.Item>
-              </Col>
-              <Col xl={{ span: 8, offset: 2 }} lg={{ span: 10 }} md={{ span: 24 }} sm={24}>
-                <Form.Item label={fieldLabels.type2}>
-                  {getFieldDecorator('type2', {
-                    rules: [{ required: true, message: '请选择仓库类型' }],
-                  })(
-                    <Select placeholder="请选择仓库类型">
-                      <Option value="private">私密</Option>
-                      <Option value="public">公开</Option>
-                    </Select>
-                  )}
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
-        </Card>
-        <Card title="成员管理" bordered={false}>
-          {getFieldDecorator('members', {
-            initialValue: tableData,
-          })(<TableForm />)}
-        </Card>
-        <FooterToolbar style={{ width }}>
-          {this.getErrorInfo()}
-          <Button type="primary" onClick={this.validate} loading={submitting}>
-            提交
-          </Button>
-        </FooterToolbar>
-      </PageHeaderWrapper>
+            )}
+          </Row>
+
+          <Row gutter={16}>
+            <Form.Item {...submitFormLayout} style={{ marginTop: 32 }}>
+              <Button type="primary" htmlType="submit" onClick={this.validate} loading={submitting}>
+                <FormattedMessage id="form.submit" />
+              </Button>
+            </Form.Item>
+          </Row>
+        </Form>
+      </Card>
     );
   }
 }

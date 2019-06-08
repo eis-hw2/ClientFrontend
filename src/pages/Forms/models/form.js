@@ -1,6 +1,6 @@
 import { routerRedux } from 'dva/router';
 import { message } from 'antd';
-import { fakeSubmitForm } from '@/services/api';
+import { trueSubmitForm, fakeSubmitForm } from '@/services/api';
 
 export default {
   namespace: 'form',
@@ -27,6 +27,16 @@ export default {
       });
       yield put(routerRedux.push('/form/step-form/result'));
     },
+    // *submitAdvancedForm({ payload }, { call }) {
+    //   const response = yield call(trueSubmitForm, payload);
+    //   console.log(response);
+    //   if(response.status == 'success'){
+    //     message.success('提交成功');
+    //   }
+    //   else{
+    //     console.log(response);
+    //   }
+    // },
     *submitAdvancedForm({ payload }, { call }) {
       yield call(fakeSubmitForm, payload);
       message.success('提交成功');

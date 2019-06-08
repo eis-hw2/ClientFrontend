@@ -35,7 +35,6 @@ class LoginPage extends Component {
           })
             .then(resolve)
             .catch(reject);
-
           Modal.info({
             title: formatMessage({ id: 'app.login.verification-code-warning' }),
           });
@@ -44,14 +43,33 @@ class LoginPage extends Component {
     });
 
   handleSubmit = (err, values) => {
-    const { type } = this.state;
     if (!err) {
+      // let formData = new FormData();
+      // Object.keys(values).forEach((key) => {
+      //   formData.append(key, values[key]);
+      // });
+      // console.log(formData)
+      // fetch("http://47.106.8.44:9090/api/v1/login", {
+      //       method: 'POST',
+      //       credentials: 'include',
+      //         headers: {
+      //           'Content-Type': 'application/x-www-form-urlencoded;'
+      //         },
+      //       body: values
+      //   })
+      //       .then(
+      //           res => res.json()
+      //       )
+      //       .then(
+      //           (result) => {
+      //             console.log(result)
+      //           }
+      //       )
       const { dispatch } = this.props;
       dispatch({
         type: 'login/login',
         payload: {
           ...values,
-          type,
         },
       });
     }
@@ -86,7 +104,7 @@ class LoginPage extends Component {
               !submitting &&
               this.renderMessage(formatMessage({ id: 'app.login.message-invalid-credentials' }))}
             <UserName
-              name="userName"
+              name="username"
               placeholder={`${formatMessage({ id: 'app.login.userName' })}: admin or user`}
               rules={[
                 {

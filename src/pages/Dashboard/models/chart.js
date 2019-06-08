@@ -1,4 +1,4 @@
-import { fakeChartData } from '@/services/api';
+import { fakeChartData, getBrokers, getFutures, passBroker } from '@/services/api';
 
 export default {
   namespace: 'chart',
@@ -15,6 +15,9 @@ export default {
     salesTypeDataOffline: [],
     radarData: [],
     loading: false,
+    brokersData: [],
+    futuresData: [],
+    currentBroker: null,
   },
 
   effects: {
@@ -31,6 +34,33 @@ export default {
         type: 'save',
         payload: {
           salesData: response.salesData,
+        },
+      });
+    },
+    *fetchBrokers(_, { call, put }) {
+      const response = yield call(getBrokers);
+      yield put({
+        type: 'save',
+        payload: {
+          brokersData: response.body,
+        },
+      });
+    },
+    *fetchFutures({ payload }, { call, put }) {
+      const response = yield call(getFutures, payload);
+      yield put({
+        type: 'save',
+        payload: {
+          futuresData: response.body,
+        },
+      });
+    },
+    *setBroker({ payload }, { call, put }) {
+      const broker = yield call(passBroker, payload);
+      yield put({
+        type: 'save',
+        payload: {
+          currentBroker: broker,
         },
       });
     },
@@ -55,6 +85,7 @@ export default {
         salesTypeDataOnline: [],
         salesTypeDataOffline: [],
         radarData: [],
+        brokersData: [],
       };
     },
   },

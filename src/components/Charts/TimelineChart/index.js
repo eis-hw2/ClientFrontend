@@ -106,7 +106,12 @@ class TimelineChart extends React.Component {
             <Axis name="x" />
             <Tooltip />
             <Legend name="key" position="top" />
-            <Geom type="line" position="x*value" size={borderWidth} color="key" />
+            <Geom
+              type="line"
+              position="x*value"
+              size={borderWidth}
+              color={['key', 'l(90) 0:#8B0000 1:#006400']}
+            />
           </Chart>
           <div style={{ marginRight: -20 }}>
             <SliderGen />
