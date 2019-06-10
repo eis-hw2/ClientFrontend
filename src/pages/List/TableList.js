@@ -357,12 +357,12 @@ class TableList extends PureComponent {
       render: text => (text === 1 ? <Button>CANCEL</Button> : <Button disabled>CANCEL</Button>),
     },
   ];
-  
+
   componentDidMount() {
-    this.fetchData()
+    this.fetchData();
   }
 
-  fetchData = () =>{
+  fetchData = () => {
     fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + 4, {
       method: 'GET',
       credentials: 'include',
@@ -395,7 +395,7 @@ class TableList extends PureComponent {
           },
         });
       });
-  }
+  };
 
   handleCancel = () => {
     console.log(this.state.selectedRows);
@@ -423,10 +423,10 @@ class TableList extends PureComponent {
         .then(res => res.json())
         .then(result => {
           console.log('cancel result:', result);
-          if(result.body.length !== 0){
-            message.success("Order Cancelled Successfully")
+          if (result.body.length !== 0) {
+            message.success('Order Cancelled Successfully');
           }
-          this.fetchData()
+          this.fetchData();
         });
     }
   };
@@ -447,13 +447,13 @@ class TableList extends PureComponent {
       ...formValues,
       ...filters,
     };
-    console.log("handleChange params:", params)
+    console.log('handleChange params:', params);
     if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
-    console.log("originData", this.state.data)
+    console.log('originData', this.state.data);
     let originData = this.state.data;
-    let newData = originData
+    let newData = originData;
     // let newList = []
     // if(params.status !== ""){
     //   let statusList =params.status.split(",")
@@ -722,7 +722,7 @@ class TableList extends PureComponent {
         <Menu.Item key="approval">批量审批</Menu.Item>
       </Menu>
     );
-    console.log("originData", this.state.data)
+    console.log('originData', this.state.data);
 
     const parentMethods = {
       handleAdd: this.handleAdd,
@@ -744,8 +744,12 @@ class TableList extends PureComponent {
               onChange={this.handleStandardTableChange}
             />
           </div>
-          <Button onClick={this.fetchData} style={{marginRight:"30px"}}>Reload Orders</Button>
-          <Button onClick={this.handleCancel} type="danger">Cancel Selected Orders</Button>
+          <Button onClick={this.fetchData} style={{ marginRight: '30px' }}>
+            Reload Orders
+          </Button>
+          <Button onClick={this.handleCancel} type="danger">
+            Cancel Selected Orders
+          </Button>
         </Card>
         <CreateForm {...parentMethods} modalVisible={modalVisible} />
         {stepFormValues && Object.keys(stepFormValues).length ? (

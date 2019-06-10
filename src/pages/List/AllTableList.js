@@ -44,7 +44,7 @@ const antiStatusMap = { WAITING: 0, FINISHED: 1, OUTDATED: 2, CANCELLED: 3 };
 const fieldLabels = {
   startTime: 'Start Time',
   endTime: 'End Time',
-}
+};
 
 const CreateForm = Form.create()(props => {
   const { modalVisible, form, handleAdd, handleModalVisible } = props;
@@ -297,8 +297,8 @@ class AllTableList extends PureComponent {
     data: [],
     brokersData: [],
     futuresData: [],
-    startTime: "",
-    endTime: ""
+    startTime: '',
+    endTime: '',
   };
 
   columns = [
@@ -329,32 +329,35 @@ class AllTableList extends PureComponent {
       render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
     },
   ];
-  
+
   componentDidMount() {
-    this.getBrokers()
+    this.getBrokers();
   }
 
-  getBrokers = () =>{
+  getBrokers = () => {
     fetch('http://202.120.40.8:30255/api/v1/Broker', {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(res => res.json())
-        .then(
-          result =>{
-            this.setState({
-              brokersData: result.body
-            })
-          }
-        )
-  }
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(result => {
+        this.setState({
+          brokersData: result.body,
+        });
+      });
+  };
 
-  fetchData = (val) =>{
-    let path = 'http://202.120.40.8:30255/api/v1/OrderBlotter/query?brokerId=' + this.state.currentBroker 
-    + "&marketDepthId=" + val
-    + "&startTime=" + this.state.startTime
-    + "&endTime=" + this.state.endTime
-    console.log("path", path)
+  fetchData = val => {
+    let path =
+      'http://202.120.40.8:30255/api/v1/OrderBlotter/query?brokerId=' +
+      this.state.currentBroker +
+      '&marketDepthId=' +
+      val +
+      '&startTime=' +
+      this.state.startTime +
+      '&endTime=' +
+      this.state.endTime;
+    console.log('path', path);
     fetch(path, {
       method: 'GET',
       credentials: 'include',
@@ -387,7 +390,7 @@ class AllTableList extends PureComponent {
           },
         });
       });
-  }
+  };
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
@@ -405,13 +408,13 @@ class AllTableList extends PureComponent {
       ...formValues,
       ...filters,
     };
-    console.log("handleChange params:", params)
+    console.log('handleChange params:', params);
     if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
-    console.log("originData", this.state.data)
+    console.log('originData', this.state.data);
     let originData = this.state.data;
-    let newData = originData
+    let newData = originData;
     // let newList = []
     // if(params.status !== ""){
     //   let statusList =params.status.split(",")
@@ -558,20 +561,17 @@ class AllTableList extends PureComponent {
     this.setState({
       currentBroker: value,
     });
-    fetch('http://202.120.40.8:30255/api/v1/Future?brokerId='+value, {
-        method: 'GET',
-        credentials: 'include',
-      })
-        .then(res => res.json())
-        .then(
-          result =>{
-            this.setState({
-              futuresData: result.body
-            })
-          }
-        )
+    fetch('http://202.120.40.8:30255/api/v1/Future?brokerId=' + value, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(result => {
+        this.setState({
+          futuresData: result.body,
+        });
+      });
   };
-  
 
   onChangeFuture = value => {
     console.log(`selected ${value}`);
@@ -594,13 +594,13 @@ class AllTableList extends PureComponent {
     });
   };
 
-  onChangeRange = (val)=>{
+  onChangeRange = val => {
     this.setState({
-      startTime:val[0].format("YYYY-MM-DD HH:MM:SS"),
-      endTime:val[1].format("YYYY-MM-DD HH:MM:SS"),
-    })
-    console.log(val[0].format("YYYY-MM-DD HH:MM:SS"))
-  }
+      startTime: val[0].format('YYYY-MM-DD HH:MM:SS'),
+      endTime: val[1].format('YYYY-MM-DD HH:MM:SS'),
+    });
+    console.log(val[0].format('YYYY-MM-DD HH:MM:SS'));
+  };
 
   render() {
     const { selectedRows, modalVisible, updateModalVisible, stepFormValues } = this.state;
@@ -610,8 +610,8 @@ class AllTableList extends PureComponent {
         <Menu.Item key="approval">批量审批</Menu.Item>
       </Menu>
     );
-    console.log("brokersData", this.state.brokersData)
-    console.log("futuresData", this.state.futuresData)
+    console.log('brokersData', this.state.brokersData);
+    console.log('futuresData', this.state.futuresData);
 
     const parentMethods = {
       handleAdd: this.handleAdd,
@@ -624,7 +624,7 @@ class AllTableList extends PureComponent {
     return (
       <div>
         <Card bordered={false} title={'History Orders'}>
-        <Row style={{ marginBottom: '20px' }}>
+          <Row style={{ marginBottom: '20px' }}>
             <Col xl={6} lg={10} md={12} sm={24} xs={24}>
               <h2>Broker: </h2>
               <Select
@@ -644,7 +644,7 @@ class AllTableList extends PureComponent {
             </Col>
             <Col xl={12} lg={10} md={12} sm={24} xs={24}>
               <h2>Date Range: </h2>
-              <RangePicker onChange={this.onChangeRange}/>
+              <RangePicker onChange={this.onChangeRange} />
             </Col>
             <Col xl={6} lg={10} md={12} sm={24} xs={24}>
               <h2>Future: </h2>
@@ -664,7 +664,7 @@ class AllTableList extends PureComponent {
               </Select>
             </Col>
           </Row>
-        
+
           <div className={styles.tableList}>
             <StandardTable
               selectedRows={selectedRows}
