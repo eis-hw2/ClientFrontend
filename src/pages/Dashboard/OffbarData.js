@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Card, Tabs, Row, Col } from 'antd';
 import { formatMessage, FormattedMessage } from 'umi-plugin-react/locale';
 import styles from './Analysis.less';
-import { TimelineChart, Pie } from '@/components/Charts';
+import { TimeBarChart, Pie } from '@/components/Charts';
 import NumberInfo from '@/components/NumberInfo';
 
 // const CustomTab = ({ data, currentTabKey: currentKey }) => (
@@ -34,7 +34,7 @@ import NumberInfo from '@/components/NumberInfo';
 
 const { TabPane } = Tabs;
 
-const OfflineData = memo(
+const OffbarData = memo(
   ({ activeKey, loading, offlineData, offlineChartData, handleTabChange }) => (
     <Card
       loading={loading}
@@ -44,18 +44,15 @@ const OfflineData = memo(
     >
       <Tabs activeKey={activeKey} onChange={handleTabChange}>
         {offlineData.map(shop => (
-          <TabPane
-            tab={<FormattedMessage id="app.analysis.sp" defaultMessage="Sales" />}
-            key={shop.name}
-          >
+          <TabPane key={shop.name}>
             <div>
-              <TimelineChart
-                height={800}
+              <TimeBarChart
+                height={400}
                 data={offlineChartData}
                 titleMap={{
                   y1: formatMessage({ id: 'app.analysis.sp' }),
-                  volume: formatMessage({ id: 'app.analysis.volume' }),
                 }}
+                title={<FormattedMessage id="app.analysis.sp" defaultMessage="Sales Trend" />}
               />
             </div>
           </TabPane>
@@ -65,4 +62,4 @@ const OfflineData = memo(
   )
 );
 
-export default OfflineData;
+export default OffbarData;

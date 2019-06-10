@@ -1,12 +1,12 @@
 import React from 'react';
-import { Chart, Tooltip, Geom, Legend, Axis, View } from 'bizcharts';
+import { Chart, Tooltip, Geom, Legend, Axis } from 'bizcharts';
 import DataSet from '@antv/data-set';
 import Slider from 'bizcharts-plugin-slider';
 import autoHeight from '../autoHeight';
 import styles from './index.less';
 
 @autoHeight()
-class TimelineChart extends React.Component {
+class TimeBarChart extends React.Component {
   render() {
     const {
       title,
@@ -98,7 +98,7 @@ class TimelineChart extends React.Component {
         data={data}
         start={ds.state.start}
         end={ds.state.end}
-        backgroundChart={{ type: 'line' }}
+        backgroundChart={{ type: 'bar' }}
         onChange={({ startValue, endValue }) => {
           ds.setState('start', startValue);
           ds.setState('end', endValue);
@@ -107,50 +107,19 @@ class TimelineChart extends React.Component {
     );
 
     return (
-      <div className={styles.timelineChart} style={{ height: height + 80 }}>
+      <div className={styles.timelineChart} style={{ height: height + 60 }}>
         <div>
           {title && <h4>{title}</h4>}
           <Chart height={height} padding={padding} data={dv} scale={cols} forceFit>
-            <View
-              end={{
-                x: 1,
-                y: 0.5,
-              }}
-              data={dv}
-            >
-              <Axis name="x" />
-              <Axis name="y1" />
-              <Tooltip />
-              <Legend name="key" position="top" />
-              <Geom type="line" position="x*value" size={borderWidth} color={['key', '#006400']} />
-            </View>
-            <View
-              start={{
-                x: 0,
-                y: 0.65,
-              }}
-              data={dv}
-            >
-              <Axis name="volume" />
-              <Axis name="x" />
-              <Legend name="key" position="top" />
-              <Geom
-                type="interval"
-                position="x*volume"
-                size={borderWidth}
-                color={['key', 'rgba(24, 144, 255, 0.85)']}
-                tooltip={[
-                  'x*volume',
-                  (x, volume) => {
-                    return {
-                      name: time,
-                      value:
-                        '<br/><span style="padding-left: 16px">成交量：' + volume + '</span><br/>',
-                    };
-                  },
-                ]}
-              />
-            </View>
+            <Axis name="x" />
+            <Tooltip />
+            <Legend name="key" position="top" />
+            <Geom
+              type="br"
+              position="x*value"
+              size={borderWidth}
+              color={['key', 'l(90) 0:#8B0000 1:#006400']}
+            />
           </Chart>
           <div style={{ marginRight: -20 }}>
             <SliderGen />
@@ -161,4 +130,4 @@ class TimelineChart extends React.Component {
   }
 }
 
-export default TimelineChart;
+export default TimeBarChart;

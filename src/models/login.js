@@ -16,8 +16,8 @@ export default {
   effects: {
     *login({ payload }, { call, put }) {
       const response = yield call(trueAccountLogin, payload);
+      console.log(payload.username);
       console.log(response);
-      console.log(response.status);
       if (response.status == 'success') {
         response.Authority = 'user';
       }
@@ -27,6 +27,7 @@ export default {
       });
       // Login successfully
       if (response.status === 'success') {
+        localStorage.setItem('username', payload.username);
         localStorage.setItem('token', response.body);
         reloadAuthorized();
         const urlParams = new URL(window.location.href);

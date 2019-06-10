@@ -36,6 +36,12 @@ class StandardTable extends PureComponent {
     return null;
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.data !== this.props.data) {
+      this.setState({ data: this.props.data });
+    }
+  }
+
   handleRowSelectChange = (selectedRowKeys, selectedRows) => {
     let { needTotalList } = this.state;
     needTotalList = needTotalList.map(item => ({
@@ -86,7 +92,8 @@ class StandardTable extends PureComponent {
           <Alert
             message={
               <Fragment>
-                已选择 <a style={{ fontWeight: 600 }}>{selectedRowKeys.length}</a> 项&nbsp;&nbsp;
+                Selcted <a style={{ fontWeight: 600 }}>{selectedRowKeys.length}</a>{' '}
+                Items&nbsp;&nbsp;
                 {needTotalList.map(item => (
                   <span style={{ marginLeft: 8 }} key={item.dataIndex}>
                     {item.title}
@@ -97,7 +104,7 @@ class StandardTable extends PureComponent {
                   </span>
                 ))}
                 <a onClick={this.cleanSelectedKeys} style={{ marginLeft: 24 }}>
-                  清空
+                  Clear
                 </a>
               </Fragment>
             }

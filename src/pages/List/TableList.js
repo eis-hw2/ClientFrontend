@@ -36,8 +36,9 @@ const getValue = obj =>
   Object.keys(obj)
     .map(key => obj[key])
     .join(',');
-const statusMap = ['default', 'processing', 'success', 'error'];
-const status = ['关闭', '运行中', '已上线', '异常'];
+const statusMap = ['processing', 'success', 'error', 'default'];
+const status = ['WAITING', 'FINISHED', 'OUTDATED', 'CANCELLED'];
+const antiStatusMap = { WAITING: 0, FINISHED: 1, OUTDATED: 2, CANCELLED: 3 };
 
 const CreateForm = Form.create()(props => {
   const { modalVisible, form, handleAdd, handleModalVisible } = props;
@@ -287,28 +288,42 @@ class TableList extends PureComponent {
     selectedRows: [],
     formValues: {},
     stepFormValues: {},
+    data: [],
   };
 
   columns = [
     {
-      title: '规则名称',
-      dataIndex: 'name',
-      render: text => <Link to={`/profile/basic/${text.replace(/\s+/gi, '-')}`}>{text}</Link>,
+      title: 'Future',
+      dataIndex: 'futureName',
     },
     {
-      title: '描述',
-      dataIndex: 'desc',
+      title: 'Order Type',
+      dataIndex: 'type',
     },
     {
-      title: '服务调用次数',
-      dataIndex: 'callNo',
+      title: 'Order Side',
+      dataIndex: 'side',
+    },
+    {
+      title: 'Price',
+      dataIndex: 'unitPrice',
+    },
+    {
+      title: 'Total Volume',
+      dataIndex: 'totalCount',
+    },
+    {
+      title: 'Remain Volume',
+      dataIndex: 'count',
+    },
+    {
+      title: 'CreationTime',
+      dataIndex: 'creationTime',
       sorter: true,
-      render: val => `${val} 万`,
-      // mark to display a total number
-      needTotal: true,
+      render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
     },
     {
-      title: '状态',
+      title: 'Status',
       dataIndex: 'status',
       filters: [
         {
@@ -333,29 +348,80 @@ class TableList extends PureComponent {
       },
     },
     {
-      title: '上次调度时间',
-      dataIndex: 'updatedAt',
-      sorter: true,
-      render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
-    },
-    {
-      title: '操作',
-      render: (text, record) => (
-        <Fragment>
-          <a onClick={() => this.handleUpdateModalVisible(true, record)}>配置</a>
-          <Divider type="vertical" />
-          <a href="">订阅警报</a>
-        </Fragment>
-      ),
+      title: 'Cancel',
+      dataIndex: 'cancel',
+      render: text => (text === 1 ? <Button>CANCEL</Button> : <Button disabled>CANCEL</Button>),
     },
   ];
 
-  componentDidMount() {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'rule/fetch',
-    });
+  componentDidUpdate() {
+    console.log(this.state.data);
   }
+
+  componentDidMount() {
+    fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + 4, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        token: localStorage.getItem('token'),
+      },
+    })
+      .then(res => res.json())
+      .then(result => {
+        console.log('history order:', result.body);
+        let data = result.body;
+        for (let item in data) {
+          data[item].key = parseInt(item);
+          data[item].status = antiStatusMap[data[item].status];
+          if (data[item].status === 0) {
+            data[item].cancel = 1;
+          }
+        }
+        if (data.length === 0) {
+          return;
+        }
+        this.setState({
+          data: {
+            list: data,
+            pagination: {
+              current: 1,
+              pageSize: 5,
+              total: data.length,
+            },
+          },
+        });
+      });
+  }
+
+  handleCancel = () => {
+    console.log(this.state.selectedRows);
+    for (let index in this.state.selectedRows) {
+      let order = this.state.selectedRows[index];
+      let params = {
+        type: 'CancelOrder',
+        futureName: order.futureName,
+        side: order.side,
+        targetId: order.id,
+        targetType: order.type,
+        unitPrice: order.unitPrice,
+      };
+      console.log('cancel params:', params);
+      fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + localStorage.getItem('broker'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          token: localStorage.getItem('token'),
+        },
+        body: JSON.stringify(params),
+      })
+        .then(res => res.json())
+        .then(result => {
+          console.log('cancel result:', result);
+        });
+    }
+  };
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
@@ -376,10 +442,13 @@ class TableList extends PureComponent {
     if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
-
-    dispatch({
-      type: 'rule/fetch',
-      payload: params,
+    let newData = this.state.data;
+    newData.pagination.current = params.currentPage;
+    this.setState({
+      data: newData,
+    });
+    this.setState({
+      cTime: new Date(),
     });
   };
 
@@ -621,10 +690,6 @@ class TableList extends PureComponent {
   }
 
   render() {
-    const {
-      rule: { data },
-      loading,
-    } = this.props;
     const { selectedRows, modalVisible, updateModalVisible, stepFormValues } = this.state;
     const menu = (
       <Menu onClick={this.handleMenuClick} selectedKeys={[]}>
@@ -642,34 +707,18 @@ class TableList extends PureComponent {
       handleUpdate: this.handleUpdate,
     };
     return (
-      <PageHeaderWrapper title="查询表格">
-        <Card bordered={false}>
+      <div>
+        <Card bordered={false} title={'History Orders'}>
           <div className={styles.tableList}>
-            <div className={styles.tableListForm}>{this.renderForm()}</div>
-            <div className={styles.tableListOperator}>
-              <Button icon="plus" type="primary" onClick={() => this.handleModalVisible(true)}>
-                新建
-              </Button>
-              {selectedRows.length > 0 && (
-                <span>
-                  <Button>批量操作</Button>
-                  <Dropdown overlay={menu}>
-                    <Button>
-                      更多操作 <Icon type="down" />
-                    </Button>
-                  </Dropdown>
-                </span>
-              )}
-            </div>
             <StandardTable
               selectedRows={selectedRows}
-              loading={loading}
-              data={data}
+              data={this.state.data}
               columns={this.columns}
               onSelectRow={this.handleSelectRows}
               onChange={this.handleStandardTableChange}
             />
           </div>
+          <Button onClick={this.handleCancel}>Cancel Selected Orders</Button>
         </Card>
         <CreateForm {...parentMethods} modalVisible={modalVisible} />
         {stepFormValues && Object.keys(stepFormValues).length ? (
@@ -679,7 +728,7 @@ class TableList extends PureComponent {
             values={stepFormValues}
           />
         ) : null}
-      </PageHeaderWrapper>
+      </div>
     );
   }
 }

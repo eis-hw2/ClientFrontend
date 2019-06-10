@@ -1,6 +1,6 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'dva';
-import { Select, Row, Col, Icon, Menu, Dropdown } from 'antd';
+import { Select, Row, Col, Icon, Menu, Dropdown, message } from 'antd';
 import GridContent from '@/components/PageHeaderWrapper/GridContent';
 import { getTimeDistance } from '@/utils/utils';
 import styles from './Analysis.less';
@@ -9,11 +9,14 @@ import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 
 const AdvancedForm = React.lazy(() => import('../Forms/AdvancedForm'));
+const TableList = React.lazy(() => import('../List/TableList'));
+const BasicGraph = React.lazy(() => import('./BasicGraph'));
 const IntroduceRow = React.lazy(() => import('./IntroduceRow'));
 const SalesCard = React.lazy(() => import('./SalesCard'));
 const TopSearch = React.lazy(() => import('./TopSearch'));
 const ProportionSales = React.lazy(() => import('./ProportionSales'));
 const OfflineData = React.lazy(() => import('./OfflineData'));
+const OffbarData = React.lazy(() => import('./OffbarData'));
 const Option = Select.Option;
 
 @connect(({ chart, loading }) => ({
@@ -29,6 +32,8 @@ class Analysis extends Component {
     currentFuture: '',
     historyData: [],
     quotation: {},
+    priceChartData: [{ x: 0, y1: 0, volume: 0 }],
+    marketDepth: { buyers: [], sellers: [] },
   };
 
   componentDidMount() {
@@ -112,6 +117,7 @@ class Analysis extends Component {
       type: 'chart/setBroker',
       payload: value,
     });
+    localStorage.setItem('broker', value);
   };
 
   onBlurBroker = () => {
@@ -148,47 +154,82 @@ class Analysis extends Component {
   };
 
   subscribeMsg = mId => {
-    let socket = new WebSocket('ws://202.120.40.8:30257/websocket/syf');
+    let dt = new Date();
+    let socket = new WebSocket('ws://202.120.40.8:30257/websocket/' + dt.getTime());
     let val = {
       type: 'login',
       body: {
-        username: 'xxx',
-        token: 'xxx',
+        username: localStorage.getItem('username'),
+        token: localStorage.getItem('token'),
         marketDepthId: mId,
         brokerId: this.state.currentBroker,
       },
     };
-    // let subscribVal = {
-    //   type:"switch",
-    //   body:{
-    //     marketDepthId: mId,
-    //     brokerId: this.state.currentBroker,
-    //   }
-    // };
+    console.log('Send message:', val);
     socket.onopen = function() {
       console.log('Socket 已打开');
       socket.send(JSON.stringify(val));
     };
     socket.onmessage = msg => {
       let msgData = JSON.parse(msg.data);
-      console.log(msgData);
-      console.log(msgData.body);
-      if (msgData.status === 'success') {
+      console.log('RECEIVE:', msgData);
+      if (msgData.body === 'connect success') {
+        return;
+      }
+      if (msgData.body === 'Login Success') {
+        message.success('Connect Successfully, please wait...');
+        return;
+      }
+      if (msgData.status !== undefined) {
+        if (msgData.body.history.length === 0) {
+          return;
+        }
         this.setState({
           historyData: msgData.body.history,
           marketDepth: msgData.body.marketDepth,
           marketQuotation: msgData.body.marketQuotation,
         });
+        this.initPriceChartData();
       } else {
-        alert('WebSocket ERROR');
+        let newPriceChartData = this.state.priceChartData;
+        newPriceChartData.push({
+          x: msgData.timestamp,
+          y1: msgData.curPrice,
+          volume: msgData.curVolume,
+        });
+        this.setState({
+          marketDepth: msgData.marketDepth,
+          marketQuotation: msgData.marketQuotation,
+          priceChartData: newPriceChartData,
+        });
       }
-      console.log(JSON.parse(msg.data));
-      // for (item in msg.data.body){
-      //   console.log(item)
-      //   console.log(msg.data.body.item)
-      // }
-      //JSON.parse(jsonstr);
     };
+  };
+
+  initPriceChartData = () => {
+    let priceChartData = [];
+    let hisData = this.state.historyData;
+    if (hisData === undefined) {
+      return;
+    } else {
+      if (hisData.length !== 0) {
+        for (let index in hisData) {
+          let data = hisData[index];
+          let dt = new Date(data.datetime);
+          let ts = dt.getTime();
+          priceChartData.push({
+            x: ts,
+            y1: data.price,
+            volume: data.volume,
+          });
+        }
+      } else {
+        return;
+      }
+    }
+    this.setState({
+      priceChartData: priceChartData,
+    });
   };
 
   render() {
@@ -234,33 +275,17 @@ class Analysis extends Component {
             turnoverRate: 0,
           }
         : this.state.marketQuotation;
-    let priceChartData = [];
-    let hisData = this.state.historyData;
-    if (hisData === undefined) {
-      priceChartData.push({
-        x: 0,
-        y1: 0,
-      });
-    } else {
-      if (hisData.length !== 0) {
-        for (let index in hisData) {
-          let data = hisData[index];
-          let dt = new Date(data.datetime);
-          let ts = dt.getTime();
-          priceChartData.push({
-            x: ts,
-            y1: data.price,
-          });
-        }
-      } else {
-        priceChartData.push({
-          x: 0,
-          y1: 0,
-        });
-      }
-    }
 
-    console.log('priceChartData:', priceChartData);
+    quotation.turnoverRate =
+      Math.round((quotation.totalVolume / quotation.totalShare) * 10000) / 100;
+
+    console.log('futuresData:', futuresData);
+    console.log('priceChartData:', this.state.priceChartData);
+    console.log('marketQuotation:', this.state.marketQuotation);
+    console.log('marketDepth:', this.state.marketDepth);
+    console.log('offlineData:', offlineData);
+    console.log('salesData:', salesData);
+
     return (
       <GridContent>
         <Suspense fallback={<PageLoading />}>
@@ -285,6 +310,24 @@ class Analysis extends Component {
                 })}
               </Select>
             </Col>
+            {/* <Col xl={6} lg={10} md={12} sm={24} xs={24}>
+              <h2>Future: </h2>
+              <Select
+                showSearch
+                style={{ width: 200 }}
+                placeholder="Select a Date"
+                optionFilterProp="children"
+                onChange={this.onChangeFutureDate}
+                onSearch={this.onSearchFutureDate}
+                filterOption={(input, option) =>
+                  option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                {["1909","1910","1911"].map(item => {
+                  return <Option value={item}>{item}</Option>;
+                })}
+              </Select>
+            </Col> */}
             <Col xl={6} lg={10} md={12} sm={24} xs={24}>
               <h2>Future: </h2>
               <Select
@@ -313,24 +356,28 @@ class Analysis extends Component {
         </Suspense>
 
         <Suspense fallback={null}>
-          <OfflineData
-            activeKey={activeKey}
-            loading={loading}
-            offlineData={offlineData}
-            offlineChartData={priceChartData}
-            handleTabChange={this.handleTabChange}
-          />
-        </Suspense>
-
-        <Suspense fallback={null}>
           <SalesCard
-            rangePickerValue={rangePickerValue}
+            marketDepth={this.state.marketDepth}
             salesData={salesData}
             isActive={this.isActive}
             handleRangePickerChange={this.handleRangePickerChange}
             loading={loading}
             selectDate={this.selectDate}
           />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <OfflineData
+            activeKey={activeKey}
+            loading={loading}
+            offlineData={[{ name: 'Stores 0', cvr: 0.1 }]}
+            offlineChartData={this.state.priceChartData}
+            handleTabChange={this.handleTabChange}
+          />
+        </Suspense>
+
+        <Suspense fallback={<PageLoading />}>
+          <TableList />
         </Suspense>
 
         <Suspense fallback={<PageLoading />}>

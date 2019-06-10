@@ -41,6 +41,10 @@ const fieldLabels = {
   unitPrice: 'Price',
   targetType: 'Target Order Type',
   stopPrice: 'Stop Price',
+  startTime: 'Start Time',
+  endTime: 'End Time',
+  processStrategy: 'Strategy',
+  intervalMinute: 'Interval Minute',
   dateRange: '生效日期',
   type: '仓库类型',
   name2: '任务名',
@@ -84,6 +88,8 @@ class AdvancedForm extends PureComponent {
     orderSide: 'BUYER',
     future: '',
     targetType: 'MarketOrder',
+    startTime: '00:00:00',
+    endTime: '00:00:00',
   };
 
   componentDidMount() {
@@ -159,7 +165,13 @@ class AdvancedForm extends PureComponent {
       if (!error) {
         const { chart } = this.props;
         const { currentBroker } = chart;
-        console.log(currentBroker, values);
+        if (values.type === 'IcebergOrder') {
+          values.sendStrategy = 'DELAY_ONE';
+          values.type = 'LimitOrder';
+          values.startTime = this.state.startTime;
+          values.endTime = this.state.endTime;
+        }
+        console.log(values);
         fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + currentBroker, {
           method: 'POST',
           credentials: 'include',
@@ -202,6 +214,25 @@ class AdvancedForm extends PureComponent {
     console.log(`selected ${value}`);
     this.setState({
       future: value,
+    });
+  };
+
+  onChangeStartTime = (value, valueS) => {
+    console.log(value.minutes());
+    this.setState({
+      startTime: valueS,
+    });
+  };
+
+  onChangeEndTime = (value, valueS) => {
+    this.setState({
+      endTime: valueS,
+    });
+  };
+
+  onChangeStrategy = value => {
+    this.setState({
+      processStrategy: value,
     });
   };
 
@@ -251,7 +282,7 @@ class AdvancedForm extends PureComponent {
                     <Option value="MarketOrder">MartketOrder</Option>
                     <Option value="LimitOrder">LimitOrder</Option>
                     <Option value="StopOrder">StopOrder</Option>
-                    <Option value="CancelOrder">CancelOrder</Option>
+                    <Option value="IcebergOrder">IcebergOrder</Option>
                   </Select>
                 )}
               </Form.Item>
@@ -270,6 +301,46 @@ class AdvancedForm extends PureComponent {
               </Form.Item>
             </Col>
           </Row>
+
+          {orderType === 'IcebergOrder' ? (
+            <Row gutter={16}>
+              <Col lg={6} md={12} sm={24}>
+                <Form.Item label={fieldLabels.processStrategy}>
+                  {getFieldDecorator('processStrategy', {
+                    rules: [{ required: true, message: 'Choose OrderSide' }],
+                  })(
+                    <Select onChange={this.onChangeStrategy} placeholder="Choose Strategy">
+                      <Option value="VWAP">VWAP</Option>
+                      <Option value="TWAP">TWAP</Option>
+                    </Select>
+                  )}
+                </Form.Item>
+              </Col>
+              <Col lg={6} md={12} sm={24}>
+                <Form.Item label={fieldLabels.startTime}>
+                  {getFieldDecorator('startTime', {
+                    rules: [{ required: true, message: 'Choose Target OrderType' }],
+                  })(<TimePicker value={this.state.startTime} onChange={this.onChangeStartTime} />)}
+                </Form.Item>
+              </Col>
+              <Col lg={6} md={12} sm={24}>
+                <Form.Item label={fieldLabels.endTime}>
+                  {getFieldDecorator('endTime', {
+                    rules: [{ required: true, message: 'Input Stop Price' }],
+                  })(<TimePicker value={this.state.endTime} onChange={this.onChangeEndTime} />)}
+                </Form.Item>
+              </Col>
+              <Col lg={6} md={12} sm={24}>
+                <Form.Item label={fieldLabels.intervalMinute}>
+                  {getFieldDecorator('intervalMinute', {
+                    rules: [{ required: true, message: 'Input Stop Price' }],
+                  })(<Input placeholder="Input Interval Minute" />)}
+                </Form.Item>
+              </Col>
+            </Row>
+          ) : (
+            <span />
+          )}
 
           {orderType === 'StopOrder' ? (
             <Row gutter={16}>
@@ -297,7 +368,7 @@ class AdvancedForm extends PureComponent {
               </Col>
             </Row>
           ) : (
-            <br />
+            <span />
           )}
 
           <Row gutter={16}>

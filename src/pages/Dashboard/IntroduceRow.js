@@ -53,6 +53,40 @@ const IntroduceRow = memo(({ loading, quotation }) => (
     <Col {...topColResponsiveProps}>
       <ChartCard
         bordered={false}
+        title={<FormattedMessage id="app.analysis.op" defaultMessage="Open Price" />}
+        action={
+          <Tooltip title={<FormattedMessage id="app.analysis.op" defaultMessage="Open Price" />}>
+            <Icon type="info-circle-o" />
+          </Tooltip>
+        }
+        loading={loading}
+        total={() => <Yuan>{quotation.openPrice}</Yuan>}
+        footer={
+          <Field
+            label={<FormattedMessage id="app.analysis.mp" defaultMessage="Mean Price" />}
+            value={`￥${numeral((quotation.highPrice + quotation.lowPrice) / 1.8).format('0,0')}`}
+          />
+        }
+        contentHeight={46}
+      >
+        <Trend flag="up" style={{ color: 'red', marginRight: 16 }}>
+          <FormattedMessage id="app.analysis.hl" defaultMessage="High Limit" />
+          <span className={styles.trendText} style={{ color: 'red' }}>
+            {'￥' + (quotation.openPrice * 10 * 11) / 100}
+          </span>
+        </Trend>
+        <Trend flag="down" style={{ color: 'green', marginRight: 16 }}>
+          <FormattedMessage id="app.analysis.ll " defaultMessage="Low Limit" />
+          <span className={styles.trendText} style={{ color: 'green' }}>
+            {'￥' + (quotation.openPrice * 10 * 9) / 100}
+          </span>
+        </Trend>
+      </ChartCard>
+    </Col>
+
+    <Col {...topColResponsiveProps}>
+      <ChartCard
+        bordered={false}
         title={<FormattedMessage id="app.analysis.pf" defaultMessage="Price Fluctuation" />}
         action={
           <Tooltip
@@ -67,7 +101,7 @@ const IntroduceRow = memo(({ loading, quotation }) => (
           <Field
             label={<FormattedMessage id="app.analysis.pfp" defaultMessage="Daily Sales" />}
             value={`%${numeral(
-              (quotation.highPrice - quotation.lowPrice) / quotation.openPrice
+              (100 * (quotation.highPrice - quotation.lowPrice)) / quotation.openPrice
             ).format('0,0')}`}
           />
         }
@@ -91,40 +125,6 @@ const IntroduceRow = memo(({ loading, quotation }) => (
     <Col {...topColResponsiveProps}>
       <ChartCard
         bordered={false}
-        title={<FormattedMessage id="app.analysis.op" defaultMessage="Open Price" />}
-        action={
-          <Tooltip title={<FormattedMessage id="app.analysis.op" defaultMessage="Open Price" />}>
-            <Icon type="info-circle-o" />
-          </Tooltip>
-        }
-        loading={loading}
-        total={() => <Yuan>{quotation.openPrice}</Yuan>}
-        footer={
-          <Field
-            label={<FormattedMessage id="app.analysis.mp" defaultMessage="Mean Price" />}
-            value={`￥${numeral((quotation.highPrice + quotation.lowPrice) / 1.8).format('0,0')}`}
-          />
-        }
-        contentHeight={46}
-      >
-        <Trend flag="up" style={{ color: 'red', marginRight: 16 }}>
-          <FormattedMessage id="app.analysis.hl" defaultMessage="High Limit" />
-          <span className={styles.trendText} style={{ color: 'red' }}>
-            {'￥' + quotation.openPrice * 1.1}
-          </span>
-        </Trend>
-        <Trend flag="down" style={{ color: 'green', marginRight: 16 }}>
-          <FormattedMessage id="app.analysis.ll " defaultMessage="Low Limit" />
-          <span className={styles.trendText} style={{ color: 'green' }}>
-            {'￥' + quotation.openPrice * 0.9}
-          </span>
-        </Trend>
-      </ChartCard>
-    </Col>
-
-    <Col {...topColResponsiveProps}>
-      <ChartCard
-        bordered={false}
         title={<FormattedMessage id="app.analysis.tr" defaultMessage="Current Price" />}
         action={
           <Tooltip title={<FormattedMessage id="app.analysis.tr" defaultMessage="Current Price" />}>
@@ -132,7 +132,7 @@ const IntroduceRow = memo(({ loading, quotation }) => (
           </Tooltip>
         }
         loading={loading}
-        total={quotation.turnoverRate * 100 + '%'}
+        total={quotation.turnoverRate + '%'}
         footer={
           <Field
             label={<FormattedMessage id="app.analysis.ts" defaultMessage="Daily Sales" />}
