@@ -30,9 +30,6 @@ const submitFormLayout = {
   },
 };
 const fieldLabels = {
-  name: '仓库名',
-  url: '仓库域名',
-  owner: '仓库管理员',
   orderType: 'OrderType',
   orderSide: 'OrderSide',
   future: 'Future',
@@ -45,14 +42,6 @@ const fieldLabels = {
   endTime: 'End Time',
   processStrategy: 'Strategy',
   intervalMinute: 'Interval Minute',
-  dateRange: '生效日期',
-  type: '仓库类型',
-  name2: '任务名',
-  url2: '任务描述',
-  owner2: '执行人',
-  approver2: '责任人',
-  dateRange2: '生效日期',
-  type2: '任务类型',
 };
 
 const tableData = [

@@ -2,6 +2,7 @@ import React, { PureComponent, Fragment } from 'react';
 import { connect } from 'dva';
 import moment from 'moment';
 import Link from 'umi/link';
+import request from '@/utils/request';
 import {
   Row,
   Col,
@@ -27,6 +28,7 @@ import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 
 import styles from './TableList.less';
 
+const { RangePicker } = DatePicker;
 const FormItem = Form.Item;
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -39,6 +41,10 @@ const getValue = obj =>
 const statusMap = ['processing', 'success', 'error', 'default'];
 const status = ['WAITING', 'FINISHED', 'OUTDATED', 'CANCELLED'];
 const antiStatusMap = { WAITING: 0, FINISHED: 1, OUTDATED: 2, CANCELLED: 3 };
+const fieldLabels = {
+  startTime: 'Start Time',
+  endTime: 'End Time',
+}
 
 const CreateForm = Form.create()(props => {
   const { modalVisible, form, handleAdd, handleModalVisible } = props;
@@ -280,7 +286,7 @@ class UpdateForm extends PureComponent {
   loading: loading.models.rule,
 }))
 @Form.create()
-class TableList extends PureComponent {
+class AllTableList extends PureComponent {
   state = {
     modalVisible: false,
     updateModalVisible: false,
@@ -289,6 +295,10 @@ class TableList extends PureComponent {
     formValues: {},
     stepFormValues: {},
     data: [],
+    brokersData: [],
+    futuresData: [],
+    startTime: "",
+    endTime: ""
   };
 
   columns = [
@@ -297,28 +307,20 @@ class TableList extends PureComponent {
       dataIndex: 'futureName',
     },
     {
-      title: 'Order Type',
-      dataIndex: 'type',
+      title: 'Buyer',
+      dataIndex: 'buyerTraderName',
     },
     {
-      title: 'Order Side',
-      dataIndex: 'side',
+      title: 'Seller',
+      dataIndex: 'sellerTraderName',
     },
     {
       title: 'Price',
-      dataIndex: 'unitPrice',
+      dataIndex: 'price',
     },
     {
-      title: 'Total Volume',
-      dataIndex: 'totalCount',
-    },
-    {
-      title: 'Remain Volume',
+      title: 'Volume',
       dataIndex: 'count',
-    },
-    {
-      title: 'Target Type',
-      dataIndex: 'targetType',
     },
     {
       title: 'Creation Time',
@@ -326,44 +328,34 @@ class TableList extends PureComponent {
       sorter: true,
       render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
     },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      filters: [
-        {
-          text: status[0],
-          value: 0,
-        },
-        {
-          text: status[1],
-          value: 1,
-        },
-        {
-          text: status[2],
-          value: 2,
-        },
-        {
-          text: status[3],
-          value: 3,
-        },
-      ],
-      render(val) {
-        return <Badge status={statusMap[val]} text={status[val]} />;
-      },
-    },
-    {
-      title: 'Cancel',
-      dataIndex: 'cancel',
-      render: text => (text === 1 ? <Button>CANCEL</Button> : <Button disabled>CANCEL</Button>),
-    },
   ];
   
   componentDidMount() {
-    this.fetchData()
+    this.getBrokers()
   }
 
-  fetchData = () =>{
-    fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + 4, {
+  getBrokers = () =>{
+    fetch('http://202.120.40.8:30255/api/v1/Broker', {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(
+          result =>{
+            this.setState({
+              brokersData: result.body
+            })
+          }
+        )
+  }
+
+  fetchData = (val) =>{
+    let path = 'http://202.120.40.8:30255/api/v1/OrderBlotter/query?brokerId=' + this.state.currentBroker 
+    + "&marketDepthId=" + val
+    + "&startTime=" + this.state.startTime
+    + "&endTime=" + this.state.endTime
+    console.log("path", path)
+    fetch(path, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -374,13 +366,13 @@ class TableList extends PureComponent {
       .then(result => {
         console.log('history order:', result.body);
         let data = result.body;
-        for (let item in data) {
-          data[item].key = parseInt(item);
-          data[item].status = antiStatusMap[data[item].status];
-          if (data[item].status === 0) {
-            data[item].cancel = 1;
-          }
-        }
+        // for (let item in data) {
+        //   data[item].key = parseInt(item);
+        //   data[item].status = antiStatusMap[data[item].status];
+        //   if (data[item].status === 0) {
+        //     data[item].cancel = 1;
+        //   }
+        // }
         if (data === undefined) {
           return;
         }
@@ -396,40 +388,6 @@ class TableList extends PureComponent {
         });
       });
   }
-
-  handleCancel = () => {
-    console.log(this.state.selectedRows);
-    for (let index in this.state.selectedRows) {
-      let order = this.state.selectedRows[index];
-      let params = {
-        type: 'CancelOrder',
-        futureName: order.futureName,
-        side: order.side,
-        targetId: order.id,
-        targetType: order.type,
-        unitPrice: order.unitPrice,
-      };
-      console.log('cancel params:', params);
-      fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + localStorage.getItem('broker'), {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          token: localStorage.getItem('token'),
-        },
-        body: JSON.stringify(params),
-      })
-        .then(res => res.json())
-        .then(result => {
-          console.log('cancel result:', result);
-          if(result.body.length !== 0){
-            message.success("Order Cancelled Successfully")
-          }
-          this.fetchData()
-        });
-    }
-  };
 
   handleStandardTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
@@ -499,7 +457,6 @@ class TableList extends PureComponent {
   handleMenuClick = e => {
     const { dispatch } = this.props;
     const { selectedRows } = this.state;
-
     if (selectedRows.length === 0) return;
     switch (e.key) {
       case 'remove':
@@ -595,123 +552,54 @@ class TableList extends PureComponent {
     this.handleUpdateModalVisible();
   };
 
-  renderSimpleForm() {
-    const {
-      form: { getFieldDecorator },
-    } = this.props;
-    return (
-      <Form onSubmit={this.handleSearch} layout="inline">
-        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
-          <Col md={8} sm={24}>
-            <FormItem label="规则名称">
-              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <FormItem label="使用状态">
-              {getFieldDecorator('status')(
-                <Select placeholder="请选择" style={{ width: '100%' }}>
-                  <Option value="0">关闭</Option>
-                  <Option value="1">运行中</Option>
-                </Select>
-              )}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <span className={styles.submitButtons}>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
-                重置
-              </Button>
-              <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
-                展开 <Icon type="down" />
-              </a>
-            </span>
-          </Col>
-        </Row>
-      </Form>
-    );
-  }
+  onChangeBroker = value => {
+    const { dispatch } = this.props;
+    console.log(`selected ${value} Broker`);
+    this.setState({
+      currentBroker: value,
+    });
+    fetch('http://202.120.40.8:30255/api/v1/Future?brokerId='+value, {
+        method: 'GET',
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(
+          result =>{
+            this.setState({
+              futuresData: result.body
+            })
+          }
+        )
+  };
+  
 
-  renderAdvancedForm() {
-    const {
-      form: { getFieldDecorator },
-    } = this.props;
-    return (
-      <Form onSubmit={this.handleSearch} layout="inline">
-        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
-          <Col md={8} sm={24}>
-            <FormItem label="规则名称">
-              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <FormItem label="使用状态">
-              {getFieldDecorator('status')(
-                <Select placeholder="请选择" style={{ width: '100%' }}>
-                  <Option value="0">关闭</Option>
-                  <Option value="1">运行中</Option>
-                </Select>
-              )}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <FormItem label="调用次数">
-              {getFieldDecorator('number')(<InputNumber style={{ width: '100%' }} />)}
-            </FormItem>
-          </Col>
-        </Row>
-        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
-          <Col md={8} sm={24}>
-            <FormItem label="更新日期">
-              {getFieldDecorator('date')(
-                <DatePicker style={{ width: '100%' }} placeholder="请输入更新日期" />
-              )}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <FormItem label="使用状态">
-              {getFieldDecorator('status3')(
-                <Select placeholder="请选择" style={{ width: '100%' }}>
-                  <Option value="0">关闭</Option>
-                  <Option value="1">运行中</Option>
-                </Select>
-              )}
-            </FormItem>
-          </Col>
-          <Col md={8} sm={24}>
-            <FormItem label="使用状态">
-              {getFieldDecorator('status4')(
-                <Select placeholder="请选择" style={{ width: '100%' }}>
-                  <Option value="0">关闭</Option>
-                  <Option value="1">运行中</Option>
-                </Select>
-              )}
-            </FormItem>
-          </Col>
-        </Row>
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ marginBottom: 24 }}>
-            <Button type="primary" htmlType="submit">
-              查询
-            </Button>
-            <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
-              重置
-            </Button>
-            <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
-              收起 <Icon type="up" />
-            </a>
-          </div>
-        </div>
-      </Form>
-    );
-  }
+  onChangeFuture = value => {
+    console.log(`selected ${value}`);
+    this.setState({
+      currentFuture: value,
+    });
+    this.fetchData(value);
+  };
 
-  renderForm() {
-    const { expandForm } = this.state;
-    return expandForm ? this.renderAdvancedForm() : this.renderSimpleForm();
+  onChangeStartTime = (value, valueS) => {
+    console.log(value.minutes());
+    this.setState({
+      startTime: valueS,
+    });
+  };
+
+  onChangeEndTime = (value, valueS) => {
+    this.setState({
+      endTime: valueS,
+    });
+  };
+
+  onChangeRange = (val)=>{
+    this.setState({
+      startTime:val[0].format("YYYY-MM-DD HH:MM:SS"),
+      endTime:val[1].format("YYYY-MM-DD HH:MM:SS"),
+    })
+    console.log(val[0].format("YYYY-MM-DD HH:MM:SS"))
   }
 
   render() {
@@ -722,7 +610,8 @@ class TableList extends PureComponent {
         <Menu.Item key="approval">批量审批</Menu.Item>
       </Menu>
     );
-    console.log("originData", this.state.data)
+    console.log("brokersData", this.state.brokersData)
+    console.log("futuresData", this.state.futuresData)
 
     const parentMethods = {
       handleAdd: this.handleAdd,
@@ -735,6 +624,47 @@ class TableList extends PureComponent {
     return (
       <div>
         <Card bordered={false} title={'History Orders'}>
+        <Row style={{ marginBottom: '20px' }}>
+            <Col xl={6} lg={10} md={12} sm={24} xs={24}>
+              <h2>Broker: </h2>
+              <Select
+                showSearch
+                style={{ width: 200 }}
+                placeholder="Select a broker"
+                optionFilterProp="children"
+                onChange={this.onChangeBroker}
+                filterOption={(input, option) =>
+                  option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                {this.state.brokersData.map(item => {
+                  return <Option value={item.id}>{item.url}</Option>;
+                })}
+              </Select>
+            </Col>
+            <Col xl={12} lg={10} md={12} sm={24} xs={24}>
+              <h2>Date Range: </h2>
+              <RangePicker onChange={this.onChangeRange}/>
+            </Col>
+            <Col xl={6} lg={10} md={12} sm={24} xs={24}>
+              <h2>Future: </h2>
+              <Select
+                showSearch
+                style={{ width: 200 }}
+                placeholder="Select a future"
+                optionFilterProp="children"
+                onChange={this.onChangeFuture}
+                filterOption={(input, option) =>
+                  option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                {this.state.futuresData.map(item => {
+                  return <Option value={item.marketDepthId}>{item.description}</Option>;
+                })}
+              </Select>
+            </Col>
+          </Row>
+        
           <div className={styles.tableList}>
             <StandardTable
               selectedRows={selectedRows}
@@ -744,8 +674,6 @@ class TableList extends PureComponent {
               onChange={this.handleStandardTableChange}
             />
           </div>
-          <Button onClick={this.fetchData} style={{marginRight:"30px"}}>Reload Orders</Button>
-          <Button onClick={this.handleCancel} type="danger">Cancel Selected Orders</Button>
         </Card>
         <CreateForm {...parentMethods} modalVisible={modalVisible} />
         {stepFormValues && Object.keys(stepFormValues).length ? (
@@ -760,4 +688,4 @@ class TableList extends PureComponent {
   }
 }
 
-export default TableList;
+export default AllTableList;

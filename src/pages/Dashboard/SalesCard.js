@@ -42,7 +42,7 @@ const SalesCard = memo(
                     <h4 className={styles.rankingTitle}>{'SELL' + (i + 1)}</h4>
                     <ul className={styles.rankingList}>
                       <li key={item.title}>
-                        <span style={{ color: 'green' }}>{'Price ¥' + item.price + ' | '}</span>
+                        <span style={{ color: 'green' }}>{'Price ¥' + item.price}</span>
                         <br />
                         <br />
                         <span style={{ color: 'blue' }}>{'Volume ' + item.count}</span>
@@ -59,7 +59,7 @@ const SalesCard = memo(
                     <h4 className={styles.rankingTitle}>{'BUY' + (i + 1)}</h4>
                     <ul className={styles.rankingList}>
                       <li key={item.title}>
-                        <span style={{ color: 'red' }}>{'Price: ¥' + item.price + '|'}</span>
+                        <span style={{ color: 'red' }}>{'Price: ¥' + item.price}</span>
                         <span style={{ color: 'blue' }}>{'Volume: ' + item.count}</span>
                       </li>
                     </ul>

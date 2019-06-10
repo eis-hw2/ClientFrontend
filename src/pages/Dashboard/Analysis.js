@@ -279,12 +279,11 @@ class Analysis extends Component {
     quotation.turnoverRate =
       Math.round((quotation.totalVolume / quotation.totalShare) * 10000) / 100;
 
-    console.log('futuresData:', futuresData);
-    console.log('priceChartData:', this.state.priceChartData);
-    console.log('marketQuotation:', this.state.marketQuotation);
-    console.log('marketDepth:', this.state.marketDepth);
-    console.log('offlineData:', offlineData);
-    console.log('salesData:', salesData);
+    // console.log('futuresData:', futuresData);
+    // console.log('marketQuotation:', this.state.marketQuotation);
+    // console.log('marketDepth:', this.state.marketDepth);
+    // console.log('offlineData:', offlineData);
+    // console.log('salesData:', salesData);
 
     return (
       <GridContent>
@@ -374,10 +373,6 @@ class Analysis extends Component {
             offlineChartData={this.state.priceChartData}
             handleTabChange={this.handleTabChange}
           />
-        </Suspense>
-
-        <Suspense fallback={<PageLoading />}>
-          <TableList />
         </Suspense>
 
         <Suspense fallback={<PageLoading />}>

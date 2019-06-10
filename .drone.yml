@@ -1,9 +1,4 @@
 pipeline:
-  build: 
-    image: registry.cn-shenzhen.aliyuncs.com/pipipan/node:1.0
-    commands:
-      - npm install
-      - npm run-script build
   publish:
     image: docker
     secrets: [docker_username,docker_password]
