@@ -64,7 +64,7 @@ const IntroduceRow = memo(({ loading, quotation }) => (
         footer={
           <Field
             label={<FormattedMessage id="app.analysis.mp" defaultMessage="Mean Price" />}
-            value={`￥${numeral((quotation.highPrice + quotation.lowPrice) / 1.8).format('0,0')}`}
+            value={`￥${numeral((quotation.currentPrice + quotation.openPrice) / 2).format('0,0')}`}
           />
         }
         contentHeight={46}

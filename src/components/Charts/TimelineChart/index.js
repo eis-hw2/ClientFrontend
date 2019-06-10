@@ -29,7 +29,7 @@ class TimelineChart extends React.Component {
       max = Math.max(
         [...data].sort((a, b) => b.y1 - a.y1)[0].y1
         // [...data].sort((a, b) => b.y2 - a.y2)[0].y2
-      );
+      )*1.1;
     }
 
     let min;
@@ -37,12 +37,12 @@ class TimelineChart extends React.Component {
       min = Math.min(
         [...data].sort((a, b) => b.y1 - a.y1)[0].y1
         // [...data].sort((a, b) => b.y2 - a.y2)[0].y2
-      );
+      )*0.9;
     }
 
     const ds = new DataSet({
       state: {
-        start: data[0].x,
+        start: data[data.length - 1].x-300000,
         end: data[data.length - 1].x,
       },
     });
@@ -87,11 +87,13 @@ class TimelineChart extends React.Component {
       },
     };
 
+    console.log("cols:", cols)
+
     const SliderGen = () => (
       <Slider
-        padding={[0, padding[1] + 20, 0, padding[3]]}
+        padding={[0, padding[1] + 60, 0, padding[3]]}
         width="auto"
-        height={26}
+        height={50}
         xAxis="x"
         yAxis="y1"
         scales={{ x: timeScale }}
@@ -120,7 +122,10 @@ class TimelineChart extends React.Component {
             >
               <Axis name="x" />
               <Axis name="y1" />
-              <Tooltip />
+              <Tooltip
+              showTitle={false}
+              itemTpl='<li data-index={index}><span style="background-color:{color};" class="g2-tooltip-marker"></span>{name}{value}</li>'
+            />
               <Legend name="key" position="top" />
               <Geom type="line" position="x*value" size={borderWidth} color={['key', '#006400']} />
             </View>
@@ -145,7 +150,7 @@ class TimelineChart extends React.Component {
                     return {
                       name: time,
                       value:
-                        '<br/><span style="padding-left: 16px">成交量：' + volume + '</span><br/>',
+                        '<br/><span style="padding-left: 16px">Volume:' + volume + '</span><br/>',
                     };
                   },
                 ]}
