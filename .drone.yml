@@ -1,0 +1,26 @@
+pipeline:
+  build: 
+    image: registry.cn-shenzhen.aliyuncs.com/pipipan/node:1.0
+    commands:
+      - npm install
+      - npm run-script build
+  publish:
+    image: docker
+    secrets: [docker_username,docker_password]
+    commands:
+        - docker login --username=$DOCKER_USERNAME --password=$DOCKER_PASSWORD registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend
+        - docker build -t registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend:master -f Dockerfile .
+        - docker push registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend:master
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+    when:
+        branch: master
+        status: success
+
+  deploy:
+    image: appleboy/drone-ssh
+    host: 202.120.40.8
+    secrets: [ssh_username, ssh_password]
+    port: 30250
+    script:
+      - /root/shell/deployment-wjs.sh frontend 30258 8080
