@@ -4,7 +4,7 @@ pipeline:
     secrets: [docker_username,docker_password]
     commands:
         - docker login --username=$DOCKER_USERNAME --password=$DOCKER_PASSWORD registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend
-        - docker build -no-cache -t registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend:master -f Dockerfile .
+        - docker build --no-cache -t registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend:master -f Dockerfile .
         - docker push registry-vpc.cn-shenzhen.aliyuncs.com/pipipan/frontend:master
     volumes:
         - /var/run/docker.sock:/var/run/docker.sock
