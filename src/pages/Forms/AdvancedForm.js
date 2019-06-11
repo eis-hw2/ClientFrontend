@@ -154,14 +154,17 @@ class AdvancedForm extends PureComponent {
       if (!error) {
         const { chart } = this.props;
         const { currentBroker } = chart;
+        let params = ""
         if (values.type === 'IcebergOrder') {
-          values.sendStrategy = 'DELAY_ONE';
           values.type = 'LimitOrder';
-          values.startTime = this.state.startTime;
-          values.endTime = this.state.endTime;
+          params = "&processStrategy="+values.processStrategy
+          +"&sendStrategy=DELAY_ONE"
+          +"&startTime="+this.state.startTime
+          +"&endTime="+this.state.endTime
+          +"&intervalMinute="+values.intervalMinute
         }
-        console.log(values);
-        fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + currentBroker, {
+        console.log("SEND", values);
+        fetch('http://202.120.40.8:30255/api/v1/Order?brokerId=' + currentBroker + params, {
           method: 'POST',
           credentials: 'include',
           headers: {

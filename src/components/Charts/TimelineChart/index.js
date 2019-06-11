@@ -42,7 +42,7 @@ class TimelineChart extends React.Component {
 
     const ds = new DataSet({
       state: {
-        start: data[data.length - 1].x-300000,
+        start:  data[data.length - 1].x - 300000,
         end: data[data.length - 1].x,
       },
     });

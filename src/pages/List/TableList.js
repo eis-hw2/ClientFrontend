@@ -327,6 +327,12 @@ class TableList extends PureComponent {
       render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
     },
     {
+      title: 'Finished Time',
+      dataIndex: 'statusSwitchTime',
+      sorter: true,
+      render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
+    },
+    {
       title: 'Status',
       dataIndex: 'status',
       filters: [

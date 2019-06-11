@@ -1,6 +1,6 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'dva';
-import { Select, Row, Col, Icon, Menu, Dropdown, message } from 'antd';
+import { Select, Row, Col, Icon, Menu, Dropdown, message, Button } from 'antd';
 import GridContent from '@/components/PageHeaderWrapper/GridContent';
 import { getTimeDistance } from '@/utils/utils';
 import styles from './Analysis.less';
@@ -165,6 +165,9 @@ class Analysis extends Component {
         brokerId: this.state.currentBroker,
       },
     };
+    this.setState({
+      curSocket: socket
+    })
     console.log('Send message:', val);
     socket.onopen = function() {
       console.log('Socket 已打开');
@@ -192,8 +195,10 @@ class Analysis extends Component {
         this.initPriceChartData();
       } else {
         let newPriceChartData = this.state.priceChartData;
+        let dt = new Date(msgData.curTime);
+        let ts = dt.getTime();
         newPriceChartData.push({
-          x: msgData.timestamp,
+          x: ts,
           y1: msgData.curPrice,
           volume: msgData.curVolume,
         });
@@ -231,6 +236,14 @@ class Analysis extends Component {
       priceChartData: priceChartData,
     });
   };
+
+  handleClose = () =>{
+    this.state.curSocket.close()
+  }
+
+  handleReload = () =>{
+    this.subscribeMsg(this.state.currentFuture)
+  }
 
   render() {
     const { rangePickerValue, salesType, currentTabKey } = this.state;
@@ -284,6 +297,7 @@ class Analysis extends Component {
     // console.log('marketDepth:', this.state.marketDepth);
     // console.log('offlineData:', offlineData);
     // console.log('salesData:', salesData);
+    console.log("priceChartData",this.state.priceChartData)
 
     return (
       <GridContent>
@@ -366,6 +380,10 @@ class Analysis extends Component {
         </Suspense>
 
         <Suspense fallback={null}>
+          <div style={{float:"right"}}>
+          <Button onClick={this.handleClose} typr="danger">Close Connection</Button>
+          <Button onClick={this.handleReload}>Reload Connection</Button>
+          </div>
           <OfflineData
             activeKey={activeKey}
             loading={loading}
