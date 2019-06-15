@@ -1,6 +1,6 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'dva';
-import { Select, Row, Col, Icon, Menu, Dropdown, message, Button } from 'antd';
+import { Popover,Select, Row, Col, Icon, Menu, Dropdown, message, Button } from 'antd';
 import GridContent from '@/components/PageHeaderWrapper/GridContent';
 import { getTimeDistance } from '@/utils/utils';
 import styles from './Analysis.less';
@@ -19,6 +19,12 @@ const OfflineData = React.lazy(() => import('./OfflineData'));
 const OffbarData = React.lazy(() => import('./OffbarData'));
 const Option = Select.Option;
 
+const content = (
+  <div>
+    <p>Content</p>
+    <p>Content</p>
+  </div>
+);
 @connect(({ chart, loading }) => ({
   chart,
   loading: loading.effects['chart/fetch'],
@@ -302,6 +308,13 @@ class Analysis extends Component {
     return (
       <GridContent>
         <Suspense fallback={<PageLoading />}>
+
+          {/* <Popover content={<IntroduceRow loading={loading} quotation={quotation} />} title="Title" trigger="hover">
+            <Button>Hover me</Button>
+          </Popover> */}
+
+        </Suspense>
+        <Suspense fallback={<PageLoading />}>
           <Row style={{ marginBottom: '20px' }}>
             <Col xl={6} lg={10} md={12} sm={24} xs={24}>
               <h2>Broker: </h2>
@@ -396,6 +409,7 @@ class Analysis extends Component {
         <Suspense fallback={<PageLoading />}>
           <AdvancedForm />
         </Suspense>
+      
       </GridContent>
     );
   }
